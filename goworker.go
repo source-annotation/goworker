@@ -30,7 +30,7 @@ type WorkerSettings struct {
 	Concurrency    int
 	Connections    int
 	URI            string
-	Namespace      string
+	Namespace      string // 不指定 namespace，默认会用 resque:
 	ExitOnComplete bool
 	IsStrict       bool
 	UseNumber      bool
@@ -116,6 +116,7 @@ func Close() {
 // and will run until a QUIT, INT, or TERM signal is
 // received, or until the queues are empty if the
 // -exit-on-complete flag is set.
+// 有看到 fan-in, fan-out 的影子，看起来像是 pipeline concurrency pattern
 func Work() error {
 	err := Init()
 	if err != nil {
@@ -123,24 +124,32 @@ func Work() error {
 	}
 	defer Close()
 
+	// quit channel, 用于通知 poller 退出
 	quit := signals()
 
+	// workerSettings.Queues   : poller 只会从 workerSettings.Queues 这几个 queue 中 poll job
+	// workerSettings.IsStrict : strict 模式下会按 queue 注册顺序去从每个 queue pull job，否则会打乱 queue 顺序再从乱序的 queues 去 pull job
 	poller, err := newPoller(workerSettings.Queues, workerSettings.IsStrict)
 	if err != nil {
 		return err
 	}
+
+	// workerSettings.Interval : 并不是每次 poll 的间隔，而是当某次 poll 没有取到任何 job 时才会休眠 Interval 后再次 poll。
 	jobs, err := poller.poll(time.Duration(workerSettings.Interval), quit)
 	if err != nil {
 		return err
 	}
 
-	var monitor sync.WaitGroup
+	var monitor sync.WaitGroup // 用于阻塞 main.main
 
+	// workerSettings.Concurrency : worker pool 中的 worker 数量
+	// id = workerID
 	for id := 0; id < workerSettings.Concurrency; id++ {
 		worker, err := newWorker(strconv.Itoa(id), workerSettings.Queues)
 		if err != nil {
 			return err
 		}
+		// jobs 为 read only channel
 		worker.work(jobs, &monitor)
 	}
 

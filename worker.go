@@ -79,6 +79,7 @@ func (w *worker) finish(conn *RedisConn, job *Job, err error) error {
 }
 
 func (w *worker) work(jobs <-chan *Job, monitor *sync.WaitGroup) {
+	// 从连接池取一个连接，如果取不到则创建一个新连接并放入连接池中
 	conn, err := GetConn()
 	if err != nil {
 		logger.Criticalf("Error on getting connection in worker %v: %v", w, err)
@@ -103,6 +104,7 @@ func (w *worker) work(jobs <-chan *Job, monitor *sync.WaitGroup) {
 				PutConn(conn)
 			}
 		}()
+		// 不断地从 jobs channel 读取 job
 		for job := range jobs {
 			if workerFunc, ok := workers[job.Payload.Class]; ok {
 				w.run(job, workerFunc)

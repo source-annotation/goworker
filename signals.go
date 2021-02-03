@@ -49,12 +49,12 @@ func signals() <-chan bool {
 
 	go func() {
 		signals := make(chan os.Signal)
-		defer close(signals)
+		defer close(signals) // ! channel 由 sender 负责关闭
 
 		signal.Notify(signals, syscall.SIGQUIT, syscall.SIGTERM, os.Interrupt)
 		defer signalStop(signals)
 
-		<-signals
+		<-signals // 阻塞直到收到 quit, terminal, interrupt 信号，通知各个 poller quit poll
 		quit <- true
 	}()
 

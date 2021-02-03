@@ -101,10 +101,12 @@ func Namespace() string {
 func init() {
 	flag.StringVar(&workerSettings.QueuesString, "queues", "", "a comma-separated list of Resque queues")
 
+	// 默认5s
 	flag.Float64Var(&workerSettings.IntervalFloat, "interval", 5.0, "sleep interval when no jobs are found")
 
 	flag.IntVar(&workerSettings.Concurrency, "concurrency", 25, "the maximum number of concurrently executing jobs")
 
+	// redis 连接池大小
 	flag.IntVar(&workerSettings.Connections, "connections", 2, "the maximum number of connections to the Redis database")
 
 	redisProvider := os.Getenv("REDIS_PROVIDER")

@@ -75,6 +75,7 @@ func (p *process) fail(conn *RedisConn) error {
 	return nil
 }
 
+// strict模式下，该方法会按顺序返回 queues，否则随机打乱 queues 再返回。
 func (p *process) queues(strict bool) []string {
 	// If the queues order is strict then just return them.
 	if strict {
