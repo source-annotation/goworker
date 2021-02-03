@@ -44,6 +44,7 @@ func (w *worker) start(conn *RedisConn, job *Job) error {
 	return w.process.start(conn)
 }
 
+// 会把 err 也写入到 redis 中
 func (w *worker) fail(conn *RedisConn, job *Job, err error) error {
 	failure := &failure{
 		FailedAt:  time.Now(),
@@ -127,6 +128,7 @@ func (w *worker) work(jobs <-chan *Job, monitor *sync.WaitGroup) {
 	}()
 }
 
+// 处理 job
 func (w *worker) run(job *Job, workerFunc workerFunc) {
 	var err error
 	defer func() {

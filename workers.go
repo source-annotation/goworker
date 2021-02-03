@@ -6,6 +6,8 @@ import (
 )
 
 var (
+	// map[class]func
+	// 例如 map["work_SendEmail"]FuncSendEmail
 	workers map[string]workerFunc
 )
 
@@ -46,6 +48,7 @@ func Enqueue(job *Job) error {
 		return err
 	}
 
+	// 把 queue 加入到 resque:squques(SET) 中，如果已存在则忽略(集合元素不重复)
 	err = conn.Send("SADD", fmt.Sprintf("%squeues", workerSettings.Namespace), job.Queue)
 	if err != nil {
 		logger.Criticalf("Cant register queue to list of use queues")

@@ -101,7 +101,7 @@ func Namespace() string {
 func init() {
 	flag.StringVar(&workerSettings.QueuesString, "queues", "", "a comma-separated list of Resque queues")
 
-	// 默认5s
+	// 默认5s，仅当某一次 poll 取不到 jobs 时，才会休眠.
 	flag.Float64Var(&workerSettings.IntervalFloat, "interval", 5.0, "sleep interval when no jobs are found")
 
 	flag.IntVar(&workerSettings.Concurrency, "concurrency", 25, "the maximum number of concurrently executing jobs")
@@ -136,12 +136,20 @@ func flags() error {
 	if !flag.Parsed() {
 		flag.Parse()
 	}
+
+	// 支持命令行参数中给各个 queue 设置权重
+	// 比如 queue="a=2,b=1" ，那么 a 就会被 append 2次到 workerSettings.Queues 里，b 只有一次。
+	// 这样 poller 从 queue a 取到 job 的概率就是 queue b 的2倍.
 	if err := workerSettings.Queues.Set(workerSettings.QueuesString); err != nil {
 		return err
 	}
+
 	if err := workerSettings.Interval.SetFloat(workerSettings.IntervalFloat); err != nil {
 		return err
 	}
+
+	// IsStrict = true, 按顺序从 workerSettings.Queues 的各个queue 里去 poll job
+	// IsStrict = false, 每次 poll 会打乱 workerSettings.Queues
 	workerSettings.IsStrict = strings.IndexRune(workerSettings.QueuesString, '=') == -1
 
 	if !workerSettings.UseNumber {

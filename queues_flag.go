@@ -14,6 +14,9 @@ var (
 
 type queuesFlag []string
 
+// 通过命令行参数传入 queue ，支持设置权重。
+// 例如 -queue="a=2,b=1"， queue a 就会被 append 两个次到 workerSetting.Queues，b 只有1次。
+// 此时 workerSettings.Queues = [a, a, b]， poller 从 queue a 取 job 的概率就是 queue b 的2倍。
 func (q *queuesFlag) Set(value string) error {
 	for _, queueAndWeight := range strings.Split(value, ",") {
 		if queueAndWeight == "" {

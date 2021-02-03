@@ -116,7 +116,6 @@ func Close() {
 // and will run until a QUIT, INT, or TERM signal is
 // received, or until the queues are empty if the
 // -exit-on-complete flag is set.
-// 有看到 fan-in, fan-out 的影子，看起来像是 pipeline concurrency pattern
 func Work() error {
 	err := Init()
 	if err != nil {
@@ -143,14 +142,13 @@ func Work() error {
 	var monitor sync.WaitGroup // 用于阻塞 main.main
 
 	// workerSettings.Concurrency : worker pool 中的 worker 数量
-	// id = workerID
+	// id = worker process ID
 	for id := 0; id < workerSettings.Concurrency; id++ {
 		worker, err := newWorker(strconv.Itoa(id), workerSettings.Queues)
 		if err != nil {
 			return err
 		}
-		// jobs 为 read only channel
-		worker.work(jobs, &monitor)
+		worker.work(jobs, &monitor) // jobs 为 read only channel
 	}
 
 	monitor.Wait()
