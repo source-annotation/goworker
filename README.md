@@ -28,11 +28,19 @@ producer(rpush) -----job-----> redis list <----jobs------ poller(lpop)
 
 ## # 消息顺序保证  
 
-goworker : 即便把先后2条消息投递到同一个 queue，也无法保证消费顺序。
+goworker : 即便把先后2条消息投递到同一个 queue，也无法保证消费顺序。 因为一个 queue 里的 job，可能会给多个并行工作的 worker 消费。
 
-poller 会把 jobs fanout 给多个并行工作的 worker。 顺序有先后的2条消息即便按顺序投递到同一个 queue，也可能同时被2个 worker 接收，所以 worker消费顺序无法保证。 
+如何保证消费顺序： concurrency = 1，也就是只有一个 worker    
+ 
 
-改造 goworker 让其支持 queue 与 worker 绑定?  args 里带一个 seq id ，消费时开发者根据 seq id 自己去判断？ 
+一般来说，mq 的消费顺序保证：  
+1. 需要保证顺序的消息投递到同一个 queue/partition/... 
+2. 同一个queue/partition/... 只允许有一个 worker 处理消息。 
+
+goworker 中 queue 并没有与 worker 绑定，所以只能让全局(所有queue) 共用一个 worker 才能解决消费顺序问题.. 
+
+投递顺序保证了，如果因为网络原因 mq 收到消息的先后顺序不一致怎么办？        
+args 里带一个 seq id ，消费时开发者根据 seq id 自己去判断 
 
 ## # 程序退出 
 

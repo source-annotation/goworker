@@ -148,8 +148,8 @@ func flags() error {
 		return err
 	}
 
-	// IsStrict = true, 按顺序从 workerSettings.Queues 的各个queue 里去 poll job
-	// IsStrict = false, 每次 poll 会打乱 workerSettings.Queues
+	// IsStrict = true : 按顺序从 workerSettings.Queues 的各个queue 里去 poll job
+	// IsStrict = false : 先打乱 workerSettings.Queues，再从顺序已打乱的各个 queue 中 pull job
 	workerSettings.IsStrict = strings.IndexRune(workerSettings.QueuesString, '=') == -1
 
 	if !workerSettings.UseNumber {

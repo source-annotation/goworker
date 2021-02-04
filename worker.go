@@ -93,6 +93,7 @@ func (w *worker) work(jobs <-chan *Job, monitor *sync.WaitGroup) {
 	monitor.Add(1)
 
 	go func() {
+		// 一个 worker 停止工作之后，同时把一个 redis conn close 掉。
 		defer func() {
 			defer monitor.Done()
 
